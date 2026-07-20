@@ -1,4 +1,3 @@
-import projectImg from '../assets/project.png';
 import CWD from '../assets/CWD.png'
 import CCPP from '../assets/CCPP.png'
 import ML from '../assets/ML.webp'
