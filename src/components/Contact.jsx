@@ -1,11 +1,18 @@
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef, useState } from 'react';
 import { FaGithub, FaLinkedin, FaEnvelope, FaMapMarkerAlt, FaPhone, FaArrowRight, FaCheck } from 'react-icons/fa';
+import Magnetic from './Magnetic';
+import RevealText from './RevealText';
+import ScrambleText from './ScrambleText';
 
 function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start end', 'end start'] });
+  const blobY = useTransform(scrollYProgress, [0, 1], ['-10%', '10%']);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -37,8 +44,16 @@ function Contact() {
     'w-full bg-transparent border-0 border-b border-line py-3 text-ink placeholder-muted/60 focus:outline-none focus:border-signal transition-colors duration-200';
 
   return (
-    <section id="contact" className="py-28 border-t border-line">
-      <div className="max-w-content mx-auto px-6 lg:px-10">
+    <section id="contact" ref={sectionRef} className="relative py-28 border-t border-line overflow-hidden">
+      <motion.div
+        aria-hidden
+        style={{ y: blobY }}
+        className="pointer-events-none absolute -top-24 -right-24 w-[420px] h-[420px] rounded-full blur-3xl"
+      >
+        <div className="w-full h-full rounded-full bg-signal/5" />
+      </motion.div>
+
+      <div className="relative max-w-content mx-auto px-6 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -46,10 +61,15 @@ function Contact() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="font-mono text-xs uppercase tracking-widest text-signal mb-4">Contact</div>
-          <h2 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-ink max-w-xl">
-            Let&rsquo;s work together
-          </h2>
+          <div className="font-mono text-xs uppercase tracking-widest text-signal mb-4">
+            <span className="sr-only">Contact</span>
+            <ScrambleText text="Contact" />
+          </div>
+          <RevealText
+            as="h2"
+            text="Let's work together"
+            className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-ink max-w-xl"
+          />
           <p className="mt-5 text-lg text-muted max-w-xl leading-relaxed">
             I&rsquo;m always interested in new opportunities and interesting problems.
             Send a message and I&rsquo;ll get back to you within a day or two.
@@ -84,22 +104,27 @@ function Contact() {
               <h3 className="font-mono text-[11px] uppercase tracking-widest text-muted mb-4">Elsewhere</h3>
               <div className="flex gap-3">
                 {socialLinks.map((social) => (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={social.label}
-                    className="w-11 h-11 border border-line flex items-center justify-center text-ink hover:border-ink hover:bg-ink hover:text-paper transition-colors duration-200"
-                  >
-                    <social.icon />
-                  </a>
+                  <Magnetic key={social.label} strength={0.45}>
+                    <a
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={social.label}
+                      className="w-11 h-11 border border-line flex items-center justify-center text-ink hover:border-ink hover:bg-ink hover:text-paper transition-colors duration-200"
+                    >
+                      <social.icon />
+                    </a>
+                  </Magnetic>
                 ))}
               </div>
             </div>
 
             <div className="flex items-center gap-3 px-5 py-4 border border-line">
-              <span className="w-2 h-2 bg-signal shrink-0" />
+              <motion.span
+                className="w-2 h-2 bg-signal shrink-0"
+                animate={{ opacity: [1, 0.35, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
               <span className="text-sm text-ink">Currently available for work</span>
             </div>
           </motion.div>
@@ -119,9 +144,14 @@ function Contact() {
                   className="absolute inset-0 bg-surface flex items-center justify-center"
                 >
                   <div className="text-center">
-                    <div className="inline-flex w-12 h-12 items-center justify-center border border-signal text-signal mb-4">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                      className="inline-flex w-12 h-12 items-center justify-center border border-signal text-signal mb-4"
+                    >
                       <FaCheck />
-                    </div>
+                    </motion.div>
                     <h4 className="font-display text-xl text-ink mb-1">Message sent</h4>
                     <p className="text-muted text-sm">Thanks for reaching out. I&rsquo;ll reply soon.</p>
                   </div>
@@ -147,13 +177,15 @@ function Contact() {
                   <label className="font-mono text-[11px] uppercase tracking-widest text-muted">Message</label>
                   <textarea name="message" value={formData.message} onChange={handleChange} rows="5" className={`${inputClass} resize-none`} placeholder="Tell me about your project..." required />
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-ink text-paper font-medium hover:bg-signal transition-colors duration-200 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Sending...' : (<>Send message <FaArrowRight className="text-sm" /></>)}
-                </button>
+                <Magnetic strength={0.25}>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-ink text-paper font-medium hover:bg-signal transition-colors duration-200 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Sending...' : (<>Send message <FaArrowRight className="text-sm" /></>)}
+                  </button>
+                </Magnetic>
               </form>
             </div>
           </motion.div>

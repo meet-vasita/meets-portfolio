@@ -1,9 +1,17 @@
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { motion, useScroll } from 'framer-motion';
+import { useRef, useState } from 'react';
 import { FaDownload, FaGraduationCap, FaBriefcase, FaAward, FaCertificate, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import Magnetic from './Magnetic';
+import RevealText from './RevealText';
+import ScrambleText from './ScrambleText';
 
 function Resume() {
   const [activeTab, setActiveTab] = useState('timeline');
+  const timelineRef = useRef(null);
+  const { scrollYProgress: timelineProgress } = useScroll({
+    target: timelineRef,
+    offset: ['start 0.85', 'end 0.65'],
+  });
 
   const educationData = [
     {
@@ -95,7 +103,7 @@ function Resume() {
   };
 
   const Card = ({ children, className = '' }) => (
-    <motion.div variants={itemVariants} className={`border border-line bg-surface p-6 ${className}`}>
+    <motion.div variants={itemVariants} whileHover={{ y: -3 }} className={`border border-line bg-surface p-6 transition-shadow duration-200 hover:shadow-[0_16px_40px_-24px_rgba(23,20,15,0.35)] ${className}`}>
       {children}
     </motion.div>
   );
@@ -107,14 +115,24 @@ function Resume() {
   );
 
   const renderTimeline = () => (
-    <div className="relative">
+    <div className="relative" ref={timelineRef}>
       <div className="absolute left-[7px] top-2 bottom-2 w-px bg-line" />
+      <motion.div
+        className="absolute left-[7px] top-2 w-px bg-signal origin-top"
+        style={{ scaleY: timelineProgress, height: 'calc(100% - 16px)' }}
+      />
       <div className="space-y-8">
         {[...experienceData, ...educationData]
           .sort((a, b) => new Date(b.period.split(' - ')[0]) - new Date(a.period.split(' - ')[0]))
           .map((item) => (
             <motion.div key={`${item.id}-${item.company || item.institution}`} variants={itemVariants} className="relative flex items-start gap-6">
-              <div className="relative z-10 w-[15px] h-[15px] rounded-full bg-signal border-4 border-paper mt-1.5" />
+              <motion.div
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                className="relative z-10 w-[15px] h-[15px] rounded-full bg-signal border-4 border-paper mt-1.5"
+              />
               <div className="flex-1 border border-line bg-surface p-6 hover:border-ink transition-colors duration-200">
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-2">
                   <h4 className="font-display text-xl text-ink">{item.title || item.degree}</h4>
@@ -286,19 +304,26 @@ function Resume() {
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14"
         >
           <div>
-            <div className="font-mono text-xs uppercase tracking-widest text-signal mb-4">Resume</div>
-            <h2 className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-ink">
-              Professional journey
-            </h2>
+            <div className="font-mono text-xs uppercase tracking-widest text-signal mb-4">
+              <span className="sr-only">Resume</span>
+              <ScrambleText text="Resume" />
+            </div>
+            <RevealText
+              as="h2"
+              text="Professional journey"
+              className="font-display text-4xl md:text-5xl font-semibold tracking-tight text-ink"
+            />
           </div>
-          <a
-            href="https://drive.google.com/file/d/1bt1uhKgaGpYF2sVy4RarR5Uqy_01y8dc/view?usp=sharing"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-paper font-medium hover:bg-signal transition-colors duration-200 w-fit"
-          >
-            <FaDownload /> Download resume
-          </a>
+          <Magnetic strength={0.3}>
+            <a
+              href="https://drive.google.com/file/d/1bt1uhKgaGpYF2sVy4RarR5Uqy_01y8dc/view?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-paper font-medium hover:bg-signal transition-colors duration-200 w-fit"
+            >
+              <FaDownload /> Download resume
+            </a>
+          </Magnetic>
         </motion.div>
 
         <div className="flex flex-wrap gap-2 mb-12">
@@ -306,10 +331,17 @@ function Resume() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-2.5 font-mono text-xs uppercase tracking-wide border transition-colors duration-200 ${
-                activeTab === tab.id ? 'bg-ink text-paper border-ink' : 'border-line text-muted hover:border-ink hover:text-ink'
+              className={`relative flex items-center gap-2 px-5 py-2.5 font-mono text-xs uppercase tracking-wide border transition-colors duration-200 ${
+                activeTab === tab.id ? 'text-paper border-ink' : 'border-line text-muted hover:border-ink hover:text-ink'
               }`}
             >
+              {activeTab === tab.id && (
+                <motion.span
+                  layoutId="resumeActivePill"
+                  className="absolute inset-0 bg-ink -z-10"
+                  transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+                />
+              )}
               <tab.icon />
               <span>{tab.label}</span>
             </button>

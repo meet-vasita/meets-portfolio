@@ -1,6 +1,1 @@
-# Node.js dependencies
-node_modules/
-
-# Other typical entries
-*.log
-*.env
+node_modules

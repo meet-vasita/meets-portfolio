@@ -7,6 +7,10 @@ import Projects from './components/Projects';
 import Resume from './components/Resume';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import SmoothScroll, { scrollToTarget } from './components/SmoothScroll';
+import Cursor from './components/Cursor';
+import GrainOverlay from './components/GrainOverlay';
+import Preloader from './components/Preloader';
 import './styles.css';
 
 const navItems = [
@@ -20,18 +24,32 @@ const navItems = [
 function App() {
   const { scrollYProgress } = useScroll();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
-  }, [menuOpen]);
+    document.body.style.overflow = menuOpen ? 'hidden' : loaded ? '' : 'hidden';
+  }, [menuOpen, loaded]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const goTo = (id) => {
     setMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    scrollToTarget(document.getElementById(id));
   };
 
   return (
     <div className="min-h-screen bg-paper text-ink font-body">
+      <Preloader onDone={() => setLoaded(true)} />
+      <SmoothScroll />
+      <Cursor />
+      <GrainOverlay />
+
       {/* Scroll progress signature */}
       <motion.div
         className="scroll-indicator fixed top-0 left-0 right-0 h-[2px] bg-signal z-[60]"
@@ -39,7 +57,11 @@ function App() {
       />
 
       {/* Nav */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-line bg-paper/90 backdrop-blur-sm">
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-line bg-paper/90 backdrop-blur-sm transition-shadow duration-300 ${
+          scrolled ? 'shadow-[0_10px_30px_-18px_rgba(23,20,15,0.35)]' : ''
+        }`}
+      >
         <div className="max-w-content mx-auto px-6 lg:px-10 h-20 flex items-center justify-between">
           <a
             href="#hero"
